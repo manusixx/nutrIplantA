@@ -246,12 +246,40 @@ Si el pipeline pasa, todo está funcionando.
 
 ## Paso 11: Configurar Qodo Merge
 
-1. Ir a https://github.com/marketplace/qodo-merge-pro
-2. Click en `Set up a free plan`.
-3. Seleccionar tu cuenta de GitHub.
-4. Seleccionar `Only select repositories` y elegir `nutrIplantA`.
-5. Aceptar permisos.
+0. Ir a https://github.com/marketplace/qodo-merge-pro
+1. Click en el botón verde Add (arriba a la derecha)
+Es el que aparece en tu captura, al lado de "By qodo-ai · 27.173 installs".
+2. Te lleva a la página de planes
+Verás dos opciones de plan:
 
+Free / Developer — gratuito, con límites mensuales (30 reviews por mes aproximadamente).
+Team / Pro — de pago.
+
+Selecciona el plan Free. Click en Install it for free o el botón equivalente que aparezca debajo del plan gratuito.
+3. Pantalla de "Order summary"
+GitHub te muestra un resumen del "pedido" (aunque sea gratis, GitHub usa este flujo). Click en Complete order and begin installation.
+No te pedirá tarjeta de crédito porque es el plan gratuito.
+4. Pantalla "Install Qodo"
+Aquí vienen las decisiones clave:
+Pregunta 1: ¿Para qué cuenta?
+Si solo tienes tu usuario manusixx, aparece directamente. Si tienes organizaciones, elige manusixx (tu cuenta personal).
+Pregunta 2: Repository access
+Tienes dos opciones:
+
+⚪ All repositories (todos los actuales y futuros) — NO uses esta
+⚫ Only select repositories — usa esta
+
+Selecciona Only select repositories.
+Pregunta 3: Selecciona el repositorio
+En el dropdown que aparece, escribe nutrIplantA y selecciónalo.
+5. Permisos
+GitHub te muestra qué permisos otorgarás a Qodo (lectura de código, escritura de comentarios en PRs, etc.). Click en Install.
+6. Confirmación de Qodo
+Te redirige al sitio de Qodo (app.qodo.ai o similar). Es posible que te pida iniciar sesión con tu cuenta de GitHub. Acepta.
+7. Verificar que está funcionando
+Vuelve a tu repositorio en GitHub:
+https://github.com/manusixx/nutrIplantA
+Settings → GitHub Apps (en el menú lateral izquierdo, sección "Integrations") → debes ver Qodo listado como instalado en este repositorio.
 Volver al PR de prueba que creaste. Qodo debería empezar a comentar automáticamente en menos de 2 minutos. Si no lo hace, comentar en el PR `/review` para forzarlo.
 
 ## Paso 12: Mergear y crear tag v0.1.0
