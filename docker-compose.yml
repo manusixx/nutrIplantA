@@ -1,0 +1,120 @@
+# ============================================================
+# nutrI-plantA — Sprint 0
+# Levanta infraestructura mínima: postgres + minio + gateway
+# ============================================================
+# Comandos:
+#   docker-compose up -d         Levantar en background
+#   docker-compose ps            Ver estado
+#   docker-compose logs -f       Ver logs
+#   docker-compose down          Detener
+#   docker-compose down -v       Detener y borrar volúmenes
+# ============================================================
+
+services:
+
+  # --- PostgreSQL 16 ---
+  postgres:
+    image: postgres:16-alpine
+    container_name: nutriplanta-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/dev/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nutriplanta-net
+
+  # --- MinIO (S3-compatible storage) ---
+  minio:
+    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
+    container_name: nutriplanta-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "${MINIO_PORT}:9000"
+      - "${MINIO_CONSOLE_PORT}:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - nutriplanta-net
+
+  # --- MinIO bucket initializer ---
+  # Crea automáticamente el bucket "diagnosticos" al iniciar
+  minio-init:
+    image: minio/mc:RELEASE.2024-11-21T17-21-54Z
+    container_name: nutriplanta-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+      mc mb local/${MINIO_BUCKET_DIAGNOSTICOS} --ignore-existing;
+      mc anonymous set download local/${MINIO_BUCKET_DIAGNOSTICOS};
+      echo 'Bucket diagnosticos listo';
+      exit 0;
+      "
+    networks:
+      - nutriplanta-net
+
+  # --- API Gateway (FastAPI hello-world en Sprint 0) ---
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: nutriplanta-gateway
+    restart: unless-stopped
+    environment:
+      APP_ENV: ${APP_ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+      GATEWAY_HOST: ${GATEWAY_HOST}
+      GATEWAY_PORT: ${GATEWAY_PORT}
+    ports:
+      - "${GATEWAY_PORT}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - nutriplanta-net
+
+# ============================================================
+# Volúmenes persistentes
+# ============================================================
+volumes:
+  postgres_data:
+    name: nutriplanta-postgres-data
+  minio_data:
+    name: nutriplanta-minio-data
+
+# ============================================================
+# Red interna
+# ============================================================
+networks:
+  nutriplanta-net:
+    name: nutriplanta-net
+    driver: bridge

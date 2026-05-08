@@ -1,0 +1,66 @@
+# ============================================================
+# Qodo Merge — Configuración
+# ============================================================
+# Documentación: https://qodo-merge-docs.qodo.ai/
+# ============================================================
+
+[config]
+model = "gpt-4o"  # Modelo por defecto del plan gratuito
+publish_output = true
+publish_output_progress = false
+verbosity_level = 1
+language = "es"  # Comentarios de Qodo en español
+
+[pr_reviewer]
+require_score_review = true
+require_tests_review = true
+require_security_review = true
+require_focused_review = true
+num_code_suggestions = 4
+inline_code_comments = true
+ask_and_reflect = false
+automatic_review = true
+extra_instructions = """
+Este proyecto sigue:
+- Hexagonal Architecture (Ports and Adapters): el código en /domain/ NO debe importar de /infrastructure/ ni de /api/.
+- Reglas de negocio críticas viven en código, no en prompts ni en frontend.
+- Autenticación JWT con Argon2id, access tokens cortos (15min) y refresh tokens rotativos.
+- Tests unitarios obligatorios sobre toda lógica de dominio nueva.
+- Mensajes de error siempre en español, dirigidos al usuario final.
+- Idioma del código: nombres en inglés. Idioma de comentarios y docstrings: español.
+"""
+
+[pr_description]
+publish_description_as_comment = false
+add_original_user_description = true
+generate_ai_title = false
+extra_instructions = ""
+
+[pr_code_suggestions]
+num_code_suggestions = 4
+summarize = true
+extra_instructions = """
+Priorizar sugerencias que:
+1. Detecten violaciones de la arquitectura hexagonal.
+2. Identifiquen falta de tests sobre lógica de dominio.
+3. Detecten secretos hardcodeados o problemas de seguridad.
+4. Mejoren la legibilidad sin cambiar la lógica.
+
+NO sugerir:
+- Renombres masivos sin justificación.
+- Optimizaciones prematuras.
+- Cambios de estilo cosméticos.
+"""
+
+[github]
+deployment_type = "app"
+
+[ignore]
+# Archivos y carpetas que Qodo no debe revisar
+glob = [
+    "**/migrations/versions/*",
+    "**/*.lock",
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/.venv/**"
+]
