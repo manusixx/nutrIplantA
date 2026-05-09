@@ -262,7 +262,7 @@ No te pedirá tarjeta de crédito porque es el plan gratuito.
 4. Pantalla "Install Qodo"
 Aquí vienen las decisiones clave:
 Pregunta 1: ¿Para qué cuenta?
-Si solo tienes tu usuario manusixx, aparece directamente. Si tienes organizaciones, elige manusixx (tu cuenta personal).
+Si solo tienes tu usuario <TU_USUARIO_GITHUB>, aparece directamente. Si tienes organizaciones, elige <TU_USUARIO_GITHUB> (tu cuenta personal).
 Pregunta 2: Repository access
 Tienes dos opciones:
 
@@ -278,7 +278,6 @@ GitHub te muestra qué permisos otorgarás a Qodo (lectura de código, escritura
 Te redirige al sitio de Qodo (app.qodo.ai o similar). Es posible que te pida iniciar sesión con tu cuenta de GitHub. Acepta.
 7. Verificar que está funcionando
 Vuelve a tu repositorio en GitHub:
-https://github.com/manusixx/nutrIplantA
 Settings → GitHub Apps (en el menú lateral izquierdo, sección "Integrations") → debes ver Qodo listado como instalado en este repositorio.
 Volver al PR de prueba que creaste. Qodo debería empezar a comentar automáticamente en menos de 2 minutos. Si no lo hace, comentar en el PR `/review` para forzarlo.
 
