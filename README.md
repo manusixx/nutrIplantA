@@ -161,9 +161,9 @@ Ver `CONTRIBUTING.md` para el detalle. Resumen:
 
 ## Créditos
 
-- Director del proyecto: Manuel
+- Línea base de desarrollo: Manuel Alejandro Pastrana Pardo, PhD.
 - Universidad del Valle, Escuela de Ingeniería de Sistemas y Computación
-- Unicamacho
+- Unicamacho - Facultad de ingeniería
 
 ## Licencia
 
