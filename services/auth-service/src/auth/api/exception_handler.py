@@ -113,9 +113,8 @@ def register_exception_handlers(app: FastAPI) -> None:
             status_code=422,
             content={
                 "error": "validation_error",
-                "message": msg,
-                "details": exc.errors(),
-            },
+                "message": msg
+          },
         )
 
     @app.exception_handler(Exception)
