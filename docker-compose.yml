@@ -8,6 +8,7 @@
 #   docker-compose logs -f       Ver logs
 #   docker-compose down          Detener
 #   docker-compose down -v       Detener y borrar volúmenes
+# Levanta: postgres + minio + gateway + auth-service
 # ============================================================
 
 services:
@@ -34,7 +35,7 @@ services:
     networks:
       - nutriplanta-net
 
-  # --- MinIO (S3-compatible storage) ---
+  # --- MinIO ---
   minio:
     image: minio/minio:RELEASE.2024-12-18T13-15-44Z
     container_name: nutriplanta-minio
@@ -56,8 +57,6 @@ services:
     networks:
       - nutriplanta-net
 
-  # --- MinIO bucket initializer ---
-  # Crea automáticamente el bucket "diagnosticos" al iniciar
   minio-init:
     image: minio/mc:RELEASE.2024-11-21T17-21-54Z
     container_name: nutriplanta-minio-init
@@ -68,14 +67,13 @@ services:
       /bin/sh -c "
       mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
       mc mb local/${MINIO_BUCKET_DIAGNOSTICOS} --ignore-existing;
-      mc anonymous set download local/${MINIO_BUCKET_DIAGNOSTICOS};
       echo 'Bucket diagnosticos listo';
       exit 0;
       "
     networks:
       - nutriplanta-net
 
-  # --- API Gateway (FastAPI hello-world en Sprint 0) ---
+  # --- API Gateway (hello-world por ahora) ---
   gateway:
     build:
       context: ./gateway
@@ -102,8 +100,61 @@ services:
     networks:
       - nutriplanta-net
 
-# ============================================================
-# Volúmenes persistentes
+  # ========== NUEVO en Sprint 1 ==========
+
+  # --- auth-service: ejecuta migraciones al iniciar ---
+  auth-migrations:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: nutriplanta-auth-migrations
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: alembic upgrade head
+    networks:
+      - nutriplanta-net
+
+  # --- auth-service: API ---
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: nutriplanta-auth
+    restart: unless-stopped
+    environment:
+      APP_ENV: ${APP_ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: ${JWT_ALGORITHM}
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES}
+      JWT_REFRESH_TOKEN_EXPIRE_DAYS: ${JWT_REFRESH_TOKEN_EXPIRE_DAYS}
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-migrations:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/api/v1/auth/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - nutriplanta-net
+
 # ============================================================
 volumes:
   postgres_data:
@@ -111,9 +162,6 @@ volumes:
   minio_data:
     name: nutriplanta-minio-data
 
-# ============================================================
-# Red interna
-# ============================================================
 networks:
   nutriplanta-net:
     name: nutriplanta-net
