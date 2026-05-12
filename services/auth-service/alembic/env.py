@@ -6,12 +6,10 @@ from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 
-# Importar el modelo SQLAlchemy para que Alembic detecte cambios
 from auth.infrastructure.persistence.user_model import Base  # noqa: F401
 
 config = context.config
 
-# URL de BD desde env vars (sobrescribe la del alembic.ini)
 postgres_user = os.getenv("POSTGRES_USER", "nutriplanta")
 postgres_password = os.getenv("POSTGRES_PASSWORD", "changeme")
 postgres_host = os.getenv("POSTGRES_HOST", "postgres")
@@ -38,6 +36,8 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         include_schemas=True,
+        version_table="alembic_version_auth",
+        version_table_schema="auth",
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -50,12 +50,13 @@ def run_migrations_online() -> None:
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
-
     with connectable.connect() as connection:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
             include_schemas=True,
+            version_table="alembic_version_auth",
+            version_table_schema="auth",
         )
         with context.begin_transaction():
             context.run_migrations()
