@@ -103,7 +103,7 @@ addopts = [
 source = ["src/diagnostico"]
 omit = [
 "*/main.py",
-"*/**init**.py",
+"*/__init__.py",
 ]
 
 [tool.coverage.report]
