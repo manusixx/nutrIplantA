@@ -44,7 +44,6 @@ def make_token(
 @pytest.fixture
 def client() -> TestClient:
     """Client de prueba del gateway."""
-    import importlib
     import sys
 
     # Recargar el módulo para que tome las env vars del fixture

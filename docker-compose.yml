@@ -68,9 +68,7 @@ services:
   # auth-service
   # ============================================================
   auth-migrations:
-    build:
-      context: ./services/auth-service
-      dockerfile: Dockerfile
+    image: nutriplanta-auth-service
     container_name: nutriplanta-auth-migrations
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -87,9 +85,7 @@ services:
       - nutriplanta-net
 
   auth-service:
-    build:
-      context: ./services/auth-service
-      dockerfile: Dockerfile
+    image: nutriplanta-auth-service
     container_name: nutriplanta-auth
     restart: unless-stopped
     environment:
