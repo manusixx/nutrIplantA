@@ -15,7 +15,7 @@ class CultivoNotFoundError(DiagnosticoDomainError):
 
 class CultivoNoAutorizadoError(DiagnosticoDomainError):
     def __init__(self) -> None:
-        super().__init__("No tiene permisos para acceder a este cultivo")
+        super().__init__("No tiene permisos para acceder a este recurso")
 
 
 class VariedadInvalidaError(DiagnosticoDomainError):
@@ -24,3 +24,26 @@ class VariedadInvalidaError(DiagnosticoDomainError):
             f"La variedad '{variedad}' no es una variedad válida de vid (Vitis vinifera)"
         )
         self.variedad = variedad
+
+
+class DiagnosticoNotFoundError(DiagnosticoDomainError):
+    def __init__(self, diagnostico_id: str) -> None:
+        super().__init__(f"Diagnóstico no encontrado: {diagnostico_id}")
+        self.diagnostico_id = diagnostico_id
+
+
+class PlantaEnfermaError(DiagnosticoDomainError):
+    """No se puede generar plan de abono si la planta tiene patologías urgentes."""
+    pass
+
+
+class RecordatorioNotFoundError(DiagnosticoDomainError):
+    def __init__(self, recordatorio_id: str) -> None:
+        super().__init__(f"Recordatorio no encontrado: {recordatorio_id}")
+        self.recordatorio_id = recordatorio_id
+
+
+class ImagenInvalidaError(DiagnosticoDomainError):
+    def __init__(self, razon: str) -> None:
+        super().__init__(f"La imagen no es válida para análisis: {razon}")
+        self.razon = razon

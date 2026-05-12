@@ -9,6 +9,7 @@ from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.config import Settings
+from auth.domain.services.admin_service import AdminService
 from auth.domain.services.auth_service import AuthService
 from auth.domain.services.session_service import SessionService
 from auth.domain.services.token_service import TokenService
@@ -76,3 +77,8 @@ async def get_session_service(
         user_repo=user_repository,
         refresh_token_expire_days=7,
     )
+async def get_admin_service(
+    user_repository: PostgresUserRepository = Depends(get_user_repository),
+) -> AdminService:
+    """Construir el AdminService."""
+    return AdminService(user_repository=user_repository)
