@@ -1,36 +1,32 @@
 [project]
 name = "diagnostico-service"
 version = "0.1.0"
-description = "nutrI-plantA: servicio de diagnóstico"
+description = "nutrI-plantA: servicio de diagnóstico nutricional en vid"
 requires-python = ">=3.12"
 dependencies = [
-# Web framework
-"fastapi==0.115.6",
-"uvicorn[standard]==0.34.0",
-
-# Validación y configuración
-"pydantic==2.10.4",
-"pydantic-settings==2.7.0",
-
-# HTTP (si este servicio consume otros)
-"httpx==0.28.1",
-
-# DI
-"dependency-injector==4.43.0",
-
-# Logging
-"structlog==24.4.0",
-
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.34.0",
+    "pydantic==2.10.4",
+    "pydantic-settings==2.7.0",
+    "pydantic[email]==2.10.4",
+    "sqlalchemy[asyncio]==2.0.36",
+    "asyncpg==0.30.0",
+    "psycopg2-binary==2.9.10",
+    "alembic==1.14.0",
+    "pyjwt==2.10.1",
+    "dependency-injector==4.43.0",
+    "structlog==24.4.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-"pytest==8.3.4",
-"pytest-asyncio==0.25.0",
-"pytest-cov==6.0.0",
-"ruff==0.8.4",
-"mypy==1.14.0",
-"import-linter==2.1",
+    "pytest==8.3.4",
+    "pytest-asyncio==0.25.0",
+    "pytest-cov==6.0.0",
+    "httpx==0.28.1",
+    "ruff==0.8.4",
+    "mypy==1.14.0",
+    "import-linter==2.1",
 ]
 
 [build-system]
@@ -39,12 +35,6 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-# ============================================================
-
-# Ruff
-
-# ============================================================
 
 [tool.ruff]
 line-length = 100
@@ -59,63 +49,24 @@ ignore = ["E501"]
 "tests/**" = ["B011"]
 "src/diagnostico/api/**" = ["B008"]
 
-# ============================================================
-
-# Mypy
-
-# ============================================================
-
 [tool.mypy]
 python_version = "3.12"
 strict = true
 ignore_missing_imports = true
 disallow_untyped_decorators = false
 
-[[tool.mypy.overrides]]
-module = "tests.*"
-disallow_untyped_defs = false
-
-# ============================================================
-
-# Pytest
-
-# ============================================================
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-python_files = "test_*.py"
-python_classes = "Test*"
-python_functions = "test_*"
 asyncio_mode = "auto"
-addopts = [
-"--strict-markers",
-"--tb=short",
-"-v",
-]
-
-# ============================================================
-
-# Coverage
-
-# ============================================================
+addopts = ["--strict-markers", "--tb=short", "-v"]
 
 [tool.coverage.run]
 source = ["src/diagnostico"]
-omit = [
-"*/main.py",
-"*/__init__.py",
-]
+omit = ["*/main.py", "*/__init__.py", "*/alembic/*"]
 
 [tool.coverage.report]
 fail_under = 80
 show_missing = true
-skip_covered = false
-
-# ============================================================
-
-# Import-linter
-
-# ============================================================
 
 [tool.importlinter]
 root_package = "diagnostico"
