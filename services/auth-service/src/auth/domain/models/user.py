@@ -6,11 +6,11 @@ Representa un usuario del sistema con sus reglas de negocio invariantes.
 """
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 from uuid import UUID, uuid4
 
 
-class UserRole(str, Enum):
+class UserRole(StrEnum):
     """Roles del sistema según el JWT."""
 
     AGRICULTOR = "AGRICULTOR"
@@ -18,7 +18,7 @@ class UserRole(str, Enum):
     ADMIN = "ADMIN"
 
 
-class UserStatus(str, Enum):
+class UserStatus(StrEnum):
     """Estados del ciclo de vida de un usuario."""
 
     PENDIENTE_APROBACION = "PENDIENTE_APROBACION"

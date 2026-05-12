@@ -1,5 +1,5 @@
 """Tests de integración para endpoints de sesión: login, logout, refresh."""
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
@@ -18,12 +18,6 @@ from auth.domain.exceptions.token_exceptions import (
 from auth.domain.models.refresh_token import RefreshToken
 from auth.domain.models.user import User, UserRole, UserStatus
 from auth.domain.services.session_service import SessionService
-from auth.infrastructure.persistence.in_memory_refresh_token_repository import (
-    InMemoryRefreshTokenRepository,
-)
-from auth.infrastructure.persistence.in_memory_user_repository import (
-    InMemoryUserRepository,
-)
 
 
 def make_approved_user() -> User:
