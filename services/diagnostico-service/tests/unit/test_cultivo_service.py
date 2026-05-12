@@ -4,7 +4,7 @@ from uuid import uuid4
 import pytest
 
 from diagnostico.domain.exceptions import CultivoNoAutorizadoError, CultivoNotFoundError
-from diagnostico.domain.models.cultivo import Cultivo, VariedadVid
+from diagnostico.domain.models.cultivo import VariedadVid
 from diagnostico.domain.services.cultivo_service import CultivoService
 from diagnostico.infrastructure.persistence.in_memory_cultivo_repository import (
     InMemoryCultivoRepository,

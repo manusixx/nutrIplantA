@@ -6,11 +6,11 @@ Solo se aceptan variedades de Vitis vinifera (dominio acotado).
 """
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 from uuid import UUID, uuid4
 
 
-class VariedadVid(str, Enum):
+class VariedadVid(StrEnum):
     """Variedades de Vitis vinifera permitidas."""
 
     ISABELLA = "Isabella"
