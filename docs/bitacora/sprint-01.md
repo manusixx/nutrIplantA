@@ -1,74 +1,126 @@
-# Bitácora — Sprint 0
+# Bitácora — Sprint 1
 
-**Período:** [fecha inicio] – [fecha fin]
-**Director:** Manuel
-**Rama:** mpastrana → develop → main
+**Período:** Mayo 2026
+**Director:** Manuel Pastrana
+**Rama:** mpastrana → develop
+**Estado:** CERRADO
 
 ## Objetivo del sprint
 
-Realizar la HU-01 que permite crear un usuario en base de datos utilzando la arquitectura propuesta
+Implementar HU-01 (Registro de cuenta de usuario) con arquitectura hexagonal completa en `auth-service`. Incluir estructura de servicio, migraciones Alembic, tests con cobertura mínima del 80%, y validación de calidad con ruff, mypy e import-linter.
 
-## Historias incluidas
+## Historias completadas
 
-HU 01 del backlog en este sprint.
+| HU | Título | Puntos | Estado |
+|---|---|---|---|
+| HU-01 | Registro de cuenta de usuario | 5 | ✅ Cerrada |
 
-## Tareas
+## Criterios de aceptación verificados
 
-- [X] Implementar HU-01
-- [X] Crear pruebas unitarias
-- [X] Verificación análisis estático de código y pruebas unitarias con covertura de más de 80%
-- [X] Verificar `docker-compose up -d` levanta los servicios.
-- [X] Verificar endpoint /api/v1/health responde.
-- [X] Verificar consola de MinIO accesible.
-- [X] Actualizar repositorio en GitHub con visibilidad pública.
-- [X] Probar pipeline CI con un PR de prueba.
+- [x] Endpoint `POST /api/v1/auth/register` responde HTTP 201 con usuario en estado `PENDIENTE_APROBACION`.
+- [x] Email duplicado responde HTTP 409 con mensaje en español.
+- [x] Email con formato inválido responde HTTP 422.
+- [x] Contraseña débil (menos de 10 chars, sin mayúscula, minúscula, número o especial) responde HTTP 422.
+- [x] Campo faltante responde HTTP 422.
+- [x] La contraseña se almacena hasheada con Argon2id. Nunca en texto plano.
+- [x] Email se normaliza a minúsculas antes de persistir.
+- [x] Usuario queda con `role = NULL` hasta que un admin apruebe.
+- [x] Tabla `auth.users` creada por migración Alembic `0001_create_users_table`.
+- [x] Endpoint `/api/v1/auth/health` responde correctamente.
+- [x] Swagger UI accesible en `http://localhost:8001/api/v1/auth/docs`.
 
-## Criterios de aceptación del sprint
+## Gates de calidad
 
-- [X] `docker-compose up -d` no devuelve errores.
-- [X] `docker-compose ps` muestra postgres, minio y gateway en estado Up.
-- [X] `curl http://localhost:8080/api/v1/health` devuelve `{"status":"ok",...}`.
-- [X] Consola MinIO accesible en http://localhost:9001.
-- [X] Pipeline CI pasa al menos una vez sobre un PR de prueba.
-- [X] Qodo Merge publica al menos una review en un PR.
+| Gate | Resultado | Detalle |
+|---|---|---|
+| `ruff check src tests` | ✅ PASS | 0 errores tras ajustes de UP017, B008, N811, F401 |
+| `mypy src` | ✅ PASS | 0 errores con `strict = true` |
+| `lint-imports` | ✅ PASS | 3 contratos arquitectura hexagonal sin violaciones |
+| `pytest --cov` | ✅ PASS | 49 tests, cobertura 82% |
+| Docker build | ✅ PASS | Imagen construida y servicio levantado |
+| Smoke tests en Docker | ✅ PASS | Endpoints verificados, tabla creada en BD |
 
-## Decisiones tomadas
+## Implementación entregada
 
-Se implementa la primera HU del prototipo y se consolidan las pruebas unitarias respectivas. 
-Se verfica de forma preventiva la calidad con las pruebas unitarias, ruff y qodo. Se hacen
-ajustes sugeridos por qodo para que el código sea limpio. 
+### Estructura hexagonal
 
-Se mantiene una arquitectura hexangonal limpia en la implementación
+```
+services/auth-service/src/auth/
+├── api/
+│   ├── dependencies.py          (DI por request)
+│   ├── exception_handler.py     (handler global, mensajes en español)
+│   ├── dtos/register_dto.py     (validación Pydantic con regex de contraseña)
+│   └── routes/auth_routes.py   (endpoints /health y /register)
+├── domain/
+│   ├── models/user.py           (entidad User pura, sin SQLAlchemy)
+│   ├── repositories/            (interfaces IUserRepository, IPasswordHasher)
+│   ├── services/auth_service.py (registro + authenticate)
+│   ├── services/token_service.py (JWT HS256, exp 15min, jti único)
+│   └── exceptions/              (excepciones de dominio en español)
+├── infrastructure/
+│   ├── persistence/             (UserModel SQLAlchemy, Postgres e InMemory repos)
+│   └── security/                (Argon2PasswordHasher)
+├── config.py                    (Pydantic Settings)
+├── container.py                 (DI Container)
+└── main.py                      (FastAPI app, lifespan)
+```
 
-## Hallazgos y problemas encontrados
+### Tests (49 tests, 82% cobertura)
 
-Por el momento ninguno a parte de las sugerencias que dió qodo y fueron depuradas.
+| Archivo | Tests | Qué cubre |
+|---|---|---|
+| `test_user_model.py` | 7 | Modelo User, estados, reglas de negocio |
+| `test_auth_service.py` | 10 | Registro y authenticate, casos límite |
+| `test_argon2_hasher.py` | 7 | Hash Argon2id, verify, edge cases |
+| `test_token_service.py` | 14 | JWT, claims, expiración, validación |
+| `test_dependencies.py` | 5 | DI por request, rollback, session |
+| `test_register_endpoint.py` | 8 | Endpoint integration tests |
 
-## Demo
+### Decisiones técnicas tomadas
 
-<!-- Capturas o evidencia de que los criterios se cumplen. -->
+- **Argon2id** como algoritmo de hash (recomendación OWASP 2025).
+- **dependency-injector** para DI declarativo (no manual).
+- **Capa de excepciones en dominio** sin referencias HTTP. El handler global las traduce.
+- **Email normalizado a lowercase** en el servicio, no en el DTO.
+- **Puerto PostgreSQL externo: 2332** (no 5432 por defecto), para evitar colisiones con otras instancias locales.
+- **Puerto Gateway externo: 8085** (no 8080).
+
+### Problemas encontrados y resueltos
+
+| Problema | Causa | Solución |
+|---|---|---|
+| `ruff B008` en Depends() | Ruff no reconoce patrón FastAPI | Silenciar en `per-file-ignores` para `api/**` |
+| `mypy UP017` en datetime | `timezone.utc` deprecado en Python 3.12 | Cambiar a `datetime.UTC` |
+| `psycopg2` no encontrado en Docker | Alembic requiere driver síncrono, `asyncpg` es async | Añadir `psycopg2-binary` a dependencias |
+| `test_token_service.py` con imports inválidos | Copilot generó archivo con `from app.services...` inventado | Eliminar archivo y escribir tests correctos |
+| MinIO en bucle `Restarting (1)` | Contraseña en `.env` no cumplía mínimo de 8 caracteres | Corregir `MINIO_ROOT_PASSWORD` en `.env` |
+| Cobertura inicial 54% | Tests basura de Copilot contaminaban la suite | Eliminar archivos, escribir tests dirigidos |
 
 ## Métricas del sprint
 
-- Story points planificados: 1 (sprint preparatorio)
-- Story points completados: 1
-- Horas dedicadas: 4
-- PRs abiertos: 0
-- PRs mergeados: 2
+- Story points completados: 5 (HU-01)
+- Tests escritos: 49
+- Cobertura: 82%
+- Archivos Python del servicio: 22
+- PRs abiertos: 1
+- Hallazgos de Qodo Merge atendidos: sí
 
 ## Retrospectiva
 
 ### Qué funcionó
 
-- La asistencia de Claude y Qodo para construir una arquitectura solida guiada, pero no delegando la códificación complemtamente
-sino siendo una extensión de lo implementado por el desarrollador para hacerlo más rápido
+- La arquitectura hexagonal separó claramente las responsabilidades. Cuando mypy fallaba, era en archivos específicos y el dominio del error era claro.
+- El flujo de gates locales (ruff → mypy → lint-imports → pytest) antes de Docker ahorró tiempo al aislar problemas.
+- Los tests unitarios con `InMemoryUserRepository` corrieron sin Docker, acelerando el ciclo de feedback.
 
-### Qué se puede mejorar
+### Qué mejorar
 
-- El plugin de Qodo local no funciona muy bien por ser beta, pero el que está conectado en el respositorio si. 
-No se debe dedicar tiempo en el IDE, sino directamente al hacer el pull request para sacarle más provecho
+- Revisar cada archivo que Copilot genere antes de ejecutarlo. Los tres archivos de tests inventados (`test_token_service.py`, `test_container.py`, `test_database.py`) costaron tiempo innecesario.
+- Probar el build Docker antes del PR, no después. El `psycopg2-binary` faltante se habría detectado antes.
+- Hacer commits más frecuentes. Varias horas de trabajo local sin commit es riesgo innecesario.
 
-### Acciones para el próximo sprint
+### Acciones para Sprint 2
 
-- implementar en lo posible más de una HU y pantallas, con el animo de poder garantizar un avance real del prototipo en 
-dos semanas
+- Añadir `psycopg2-binary` a cualquier nuevo servicio desde el inicio.
+- Incluir `start_period: 30s` en healthchecks de MinIO y servicios con arranque lento.
+- No pedir a Copilot que genere archivos completos; solo usarlo para autocompletar líneas.

@@ -12,8 +12,8 @@ from auth.config import Settings
 from auth.domain.services.auth_service import AuthService
 from auth.domain.services.session_service import SessionService
 from auth.domain.services.token_service import TokenService
-from auth.infrastructure.persistence.in_memory_refresh_token_repository import (
-    InMemoryRefreshTokenRepository,
+from auth.infrastructure.persistence.postgres_refresh_token_repository import (
+    PostgresRefreshTokenRepository,
 )
 from auth.infrastructure.persistence.postgres_user_repository import (
     PostgresUserRepository,
@@ -59,15 +59,16 @@ async def get_auth_service(
 async def get_session_service(
     request: Request,
     user_repository: PostgresUserRepository = Depends(get_user_repository),
+    session: AsyncSession = Depends(get_db_session),
 ) -> SessionService:
-    """Construir el SessionService con sus dependencias."""
+    """Construir el SessionService con persistencia real en PostgreSQL."""
     password_hasher = request.app.state.container.password_hasher()
     token_service: TokenService = request.app.state.container.token_service()
     auth_svc = AuthService(
         user_repository=user_repository,
         password_hasher=password_hasher,
     )
-    rt_repo = InMemoryRefreshTokenRepository()
+    rt_repo = PostgresRefreshTokenRepository(session=session)
     return SessionService(
         auth_service=auth_svc,
         token_service=token_service,

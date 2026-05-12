@@ -1,19 +1,10 @@
 # ============================================================
-# nutrI-plantA — Sprint 0
-# Levanta infraestructura mínima: postgres + minio + gateway
-# ============================================================
-# Comandos:
-#   docker-compose up -d         Levantar en background
-#   docker-compose ps            Ver estado
-#   docker-compose logs -f       Ver logs
-#   docker-compose down          Detener
-#   docker-compose down -v       Detener y borrar volúmenes
-# Levanta: postgres + minio + gateway + auth-service
+# nutrI-plantA — Sprints 2, 3 y 4
+# Stack completo: postgres + minio + gateway + auth + diagnostico
 # ============================================================
 
 services:
 
-  # --- PostgreSQL 16 ---
   postgres:
     image: postgres:16-alpine
     container_name: nutriplanta-postgres
@@ -35,7 +26,6 @@ services:
     networks:
       - nutriplanta-net
 
-  # --- MinIO ---
   minio:
     image: minio/minio:RELEASE.2024-12-18T13-15-44Z
     container_name: nutriplanta-minio
@@ -51,9 +41,10 @@ services:
       - minio_data:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
+      interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
+      start_period: 30s
     networks:
       - nutriplanta-net
 
@@ -73,36 +64,9 @@ services:
     networks:
       - nutriplanta-net
 
-  # --- API Gateway (hello-world por ahora) ---
-  gateway:
-    build:
-      context: ./gateway
-      dockerfile: Dockerfile
-    container_name: nutriplanta-gateway
-    restart: unless-stopped
-    environment:
-      APP_ENV: ${APP_ENV}
-      LOG_LEVEL: ${LOG_LEVEL}
-      GATEWAY_HOST: ${GATEWAY_HOST}
-      GATEWAY_PORT: ${GATEWAY_PORT}
-    ports:
-      - "${GATEWAY_PORT}:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-    networks:
-      - nutriplanta-net
-
-  # ========== NUEVO en Sprint 1 ==========
-
-  # --- auth-service: ejecuta migraciones al iniciar ---
+  # ============================================================
+  # auth-service
+  # ============================================================
   auth-migrations:
     build:
       context: ./services/auth-service
@@ -114,6 +78,7 @@ services:
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_DB: ${POSTGRES_DB}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
     depends_on:
       postgres:
         condition: service_healthy
@@ -121,7 +86,6 @@ services:
     networks:
       - nutriplanta-net
 
-  # --- auth-service: API ---
   auth-service:
     build:
       context: ./services/auth-service
@@ -152,10 +116,102 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+      start_period: 10s
     networks:
       - nutriplanta-net
 
-# ============================================================
+  # ============================================================
+  # diagnostico-service — NUEVO en Sprint 4
+  # ============================================================
+  diagnostico-migrations:
+    build:
+      context: ./services/diagnostico-service
+      dockerfile: Dockerfile
+    container_name: nutriplanta-diagnostico-migrations
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: alembic upgrade head
+    networks:
+      - nutriplanta-net
+
+  diagnostico-service:
+    build:
+      context: ./services/diagnostico-service
+      dockerfile: Dockerfile
+    container_name: nutriplanta-diagnostico
+    restart: unless-stopped
+    environment:
+      APP_ENV: ${APP_ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      MINIO_HOST: minio
+      MINIO_PORT: 9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET_DIAGNOSTICOS: ${MINIO_BUCKET_DIAGNOSTICOS}
+    ports:
+      - "8002:8002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      diagnostico-migrations:
+        condition: service_completed_successfully
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/api/v1/diagnostico/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - nutriplanta-net
+
+  # ============================================================
+  # API Gateway — actualizado en Sprint 3
+  # ============================================================
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: nutriplanta-gateway
+    restart: unless-stopped
+    environment:
+      APP_ENV: ${APP_ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+      GATEWAY_HOST: ${GATEWAY_HOST}
+      GATEWAY_PORT: ${GATEWAY_PORT}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: ${JWT_ALGORITHM}
+      AUTH_SERVICE_URL: http://auth-service:8001
+      DIAGNOSTICO_SERVICE_URL: http://diagnostico-service:8002
+    ports:
+      - "${GATEWAY_PORT}:8080"
+    depends_on:
+      auth-service:
+        condition: service_healthy
+    #  diagnostico-service:
+    #    condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - nutriplanta-net
+
 volumes:
   postgres_data:
     name: nutriplanta-postgres-data
