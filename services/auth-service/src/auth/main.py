@@ -6,13 +6,14 @@ posteriores.
 """
 import logging
 import os
-from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
 from auth.api.exception_handler import register_exception_handlers
 from auth.api.routes.auth_routes import router as auth_router
+from auth.api.routes.session_routes import router as session_router
 from auth.container import Container
 
 # Configurar logging básico
@@ -55,3 +56,6 @@ register_exception_handlers(app)
 
 # Registrar rutas
 app.include_router(auth_router)
+
+# Registrar rutas de sesión (login, logout, refresh tokens)
+app.include_router(session_router)

@@ -17,7 +17,7 @@ COPY pyproject.toml .
 
 # Instalar setuptools para resolución de dependencias y construir wheels
 RUN pip install --upgrade pip setuptools wheel
-RUN pip wheel --no-cache-dir --wheel-dir /build/wheels \
+RUN python -m pip install --no-cache-dir /wheels/* && rm -rf /wheels \
     "fastapi==0.115.6" \
     "uvicorn[standard]==0.34.0" \
     "pydantic==2.10.4" \

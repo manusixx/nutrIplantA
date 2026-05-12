@@ -128,3 +128,32 @@ def register_exception_handlers(app: FastAPI) -> None:
                 "message": "Error interno del servidor. Intente más tarde",
             },
         )
+
+    from auth.domain.exceptions.token_exceptions import (
+        InvalidRefreshTokenError,
+        TokenReuseDetectedError,
+    )
+
+    @app.exception_handler(InvalidRefreshTokenError)
+    async def invalid_refresh_token(
+        request: Request, exc: InvalidRefreshTokenError
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=401,
+            content={
+                "error": "invalid_refresh_token",
+                "message": exc.message,
+            },
+        )
+
+    @app.exception_handler(TokenReuseDetectedError)
+    async def token_reuse_detected(
+        request: Request, exc: TokenReuseDetectedError
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=401,
+            content={
+                "error": "token_reuse_detected",
+                "message": exc.message,
+            },
+        )

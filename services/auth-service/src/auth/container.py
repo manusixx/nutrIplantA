@@ -9,10 +9,14 @@ from dependency_injector import containers, providers
 
 from auth.config import Settings
 from auth.domain.services.auth_service import AuthService
+from auth.domain.services.session_service import SessionService
 from auth.domain.services.token_service import TokenService
 from auth.infrastructure.persistence.database import (
     create_engine,
     create_session_factory,
+)
+from auth.infrastructure.persistence.in_memory_refresh_token_repository import (
+    InMemoryRefreshTokenRepository,
 )
 from auth.infrastructure.persistence.postgres_user_repository import (
     PostgresUserRepository,
@@ -43,11 +47,14 @@ class Container(containers.DeclarativeContainer):
     password_hasher = providers.Singleton(Argon2PasswordHasher)
 
     # --- Repositorios ---
-    # Nota: el repositorio se instancia por request (factory),
-    # no singleton, porque depende de una sesión por request.
     user_repository = providers.Factory(
         PostgresUserRepository,
         # session se inyecta por dependencia FastAPI en runtime
+    )
+
+    refresh_token_repository = providers.Factory(
+        InMemoryRefreshTokenRepository,
+        # En producción: PostgresRefreshTokenRepository con sesión por request
     )
 
     # --- Domain services ---
@@ -62,4 +69,13 @@ class Container(containers.DeclarativeContainer):
         AuthService,
         password_hasher=password_hasher,
         # user_repository se inyecta en cada request via dependencies.py
+    )
+
+    session_service = providers.Factory(
+        SessionService,
+        auth_service=auth_service,
+        token_service=token_service,
+        refresh_token_repo=refresh_token_repository,
+        user_repository=user_repository,
+        refresh_token_expire_days=config.provided.jwt_refresh_token_expire_days,
     )

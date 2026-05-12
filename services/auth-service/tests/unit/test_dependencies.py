@@ -11,9 +11,6 @@ from auth.api.dependencies import (
     get_user_repository,
 )
 from auth.config import Settings
-from auth.infrastructure.persistence.in_memory_user_repository import (
-    InMemoryUserRepository,
-)
 from auth.infrastructure.persistence.postgres_user_repository import (
     PostgresUserRepository,
 )
@@ -145,7 +142,7 @@ class TestGetAuthService:
         request = _make_request_with_container(container)
 
         # User repository fake (in-memory)
-        user_repo = InMemoryUserRepository()
+        # user_repo = InMemoryUserRepository()
         # PostgresUserRepository tiene una interfaz compatible, pero
         # get_auth_service espera específicamente PostgresUserRepository
         # como tipo declarado. Le pasamos uno mock.
