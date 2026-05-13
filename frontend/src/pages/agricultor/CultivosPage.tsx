@@ -51,13 +51,13 @@ export default function CultivosPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-2">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Mis Cultivos</h1>
+          <h1 className="font-display text-3xl font-bold text-[#00346f]">Mis Cultivos</h1>
           <p className="text-gray-500 mt-1">{cultivos.length} cultivo{cultivos.length !== 1 ? 's' : ''} registrado{cultivos.length !== 1 ? 's' : ''}</p>
         </div>
-        <Link to="/cultivos/nuevo" className="btn-primary flex items-center gap-2">
+        <Link to="/cultivos/nuevo" className="btn-primary flex items-center gap-2 flex-shrink-0">
           <Plus size={18} />
           Nuevo cultivo
         </Link>
@@ -76,7 +76,7 @@ export default function CultivosPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {cultivos.map(cultivo => (
-            <div key={cultivo.id} className="card hover:shadow-card-hover transition-shadow">
+            <div key={cultivo.id} className="card p-6 hover:shadow-card-hover transition-shadow">
               <div className="flex items-start justify-between mb-3">
                 <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center">
                   <Sprout className="w-5 h-5 text-primary-600" />

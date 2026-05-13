@@ -57,12 +57,12 @@ function AppRoutes() {
               <Route path="/dashboard" element={<DashboardPage />} />
 
               {/* Agricultor */}
-              <Route path="/cultivos" element={<RequireRole roles={['AGRICULTOR']}><CultivosPage /></RequireRole>} />
-              <Route path="/cultivos/nuevo" element={<RequireRole roles={['AGRICULTOR']}><NuevoCultivoPage /></RequireRole>} />
-              <Route path="/diagnosticos/nuevo" element={<RequireRole roles={['AGRICULTOR']}><NuevoDiagnosticoPage /></RequireRole>} />
-              <Route path="/diagnosticos/:id" element={<RequireRole roles={['AGRICULTOR', 'INVESTIGADOR']}><DetalleDiagnosticoPage /></RequireRole>} />
-              <Route path="/historial" element={<RequireRole roles={['AGRICULTOR', 'INVESTIGADOR']}><HistorialPage /></RequireRole>} />
-              <Route path="/planes" element={<RequireRole roles={['AGRICULTOR']}><PlanesPage /></RequireRole>} />
+              <Route path="/cultivos" element={<RequireRole roles={['AGRICULTOR', 'ADMIN']}><CultivosPage /></RequireRole>} />
+              <Route path="/cultivos/nuevo" element={<RequireRole roles={['AGRICULTOR', 'ADMIN']}><NuevoCultivoPage /></RequireRole>} />
+              <Route path="/diagnosticos/nuevo" element={<RequireRole roles={['AGRICULTOR', 'INVESTIGADOR','ADMIN']}><NuevoDiagnosticoPage /></RequireRole>} />
+              <Route path="/diagnosticos/:id" element={<RequireRole roles={['AGRICULTOR', 'INVESTIGADOR', 'ADMIN']}><DetalleDiagnosticoPage /></RequireRole>} />
+              <Route path="/historial" element={<RequireRole roles={['AGRICULTOR', 'INVESTIGADOR', 'ADMIN']}><HistorialPage /></RequireRole>} />
+              <Route path="/planes" element={<RequireRole roles={['AGRICULTOR', 'ADMIN']}><PlanesPage /></RequireRole>} />
 
               {/* Admin */}
               <Route path="/admin/usuarios" element={<RequireRole roles={['ADMIN']}><UsuariosAdminPage /></RequireRole>} />

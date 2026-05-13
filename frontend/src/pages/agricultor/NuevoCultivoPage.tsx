@@ -42,7 +42,7 @@ export default function NuevoCultivoPage() {
   const set = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }))
 
   return (
-    <div className="max-w-xl mx-auto space-y-6">
+    <div className="max-w-xl mx-auto space-y-6 px-4 pt-4">
       <div className="flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-xl">
           <ArrowLeft size={20} />
@@ -53,7 +53,7 @@ export default function NuevoCultivoPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="card space-y-5">
+      <form onSubmit={handleSubmit} className="card p-8 card space-y-5 shadow-sm">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Nombre de la finca *

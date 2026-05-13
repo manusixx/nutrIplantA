@@ -10,10 +10,10 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/dashboard',      label: 'Inicio',        roles: ['AGRICULTOR', 'INVESTIGADOR', 'ADMIN'] },
-  { to: '/cultivos',       label: 'Mis Cultivos',  roles: ['AGRICULTOR'] },
-  { to: '/diagnosticos',   label: 'Diagnóstico',   roles: ['AGRICULTOR', 'INVESTIGADOR'] },
-  { to: '/historial',      label: 'Historial',     roles: ['AGRICULTOR', 'INVESTIGADOR'] },
-  { to: '/planes',         label: 'Plan de Abono', roles: ['AGRICULTOR'] },
+  { to: '/cultivos',       label: 'Mis Cultivos',  roles: ['AGRICULTOR', 'ADMIN'] },
+  { to: '/diagnosticos',   label: 'Diagnóstico',   roles: ['AGRICULTOR', 'INVESTIGADOR', 'ADMIN'] },
+  { to: '/historial',      label: 'Historial',     roles: ['AGRICULTOR', 'INVESTIGADOR', 'ADMIN'] },
+  { to: '/planes',         label: 'Plan de Abono', roles: ['AGRICULTOR', 'ADMIN'] },
   { to: '/admin/usuarios', label: 'Usuarios',      roles: ['ADMIN'] },
 ]
 
@@ -34,7 +34,7 @@ export default function TopNavBar() {
   )
 
   return (
-    <header className="fixed top-0 z-50 w-full bg-white border-b border-[#004A99] flex justify-between items-center px-8 lg:px-12 h-20">
+    <header className="w-full bg-white border-b border-[#004A99] flex justify-between items-center px-8 lg:px-12 h-20">
       {/* Logo izquierdo: Univalle */}
       <div className="flex items-center gap-4">
         <div className="w-10 h-10 bg-[#b6171e] rounded flex items-center justify-center flex-shrink-0">
