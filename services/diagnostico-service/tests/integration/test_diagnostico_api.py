@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+
 from diagnostico.main import app
 
 

@@ -6,8 +6,8 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from diagnostico.domain.models.diagnostico import (
-    Diagnostico,
     DeficienciaNutricional,
+    Diagnostico,
     EstadoGeneral,
     NivelConfianza,
     PatologiaDetectada,

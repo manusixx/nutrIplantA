@@ -10,15 +10,15 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from diagnostico.api.routes.cultivo_routes import router as cultivo_router
 from diagnostico.api.routes.cultivo_routes import _get_cultivo_service
-from diagnostico.api.routes.diagnostico_routes import router as diagnostico_router
+from diagnostico.api.routes.cultivo_routes import router as cultivo_router
 from diagnostico.api.routes.diagnostico_routes import (
     _get_diagnostico_service,
     _get_plan_service,
 )
+from diagnostico.api.routes.diagnostico_routes import router as diagnostico_router
 from diagnostico.config import get_settings
 from diagnostico.domain.exceptions import (
     CultivoNoAutorizadoError,
