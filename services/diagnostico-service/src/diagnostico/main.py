@@ -1,7 +1,7 @@
 """
-nutrI-plantA diagnostico-service — Sprints 5 y 6.
+nutrI-plantA diagnostico-service — Sprint 9.
 
-Sprints 5-6: CRUD cultivos + diagnóstico con MockVisionProvider + planes de abono.
+Sprint 9: persistencia real en PostgreSQL para todos los repositorios.
 """
 import logging
 import os
@@ -10,14 +10,16 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
-from diagnostico.api.routes.cultivo_routes import _get_cultivo_service
 from diagnostico.api.routes.cultivo_routes import router as cultivo_router
+from diagnostico.api.routes.cultivo_routes import _get_cultivo_service
+from diagnostico.api.routes.diagnostico_routes import router as diagnostico_router
 from diagnostico.api.routes.diagnostico_routes import (
     _get_diagnostico_service,
     _get_plan_service,
 )
-from diagnostico.api.routes.diagnostico_routes import router as diagnostico_router
+from diagnostico.config import get_settings
 from diagnostico.domain.exceptions import (
     CultivoNoAutorizadoError,
     CultivoNotFoundError,
@@ -29,13 +31,19 @@ from diagnostico.domain.exceptions import (
 from diagnostico.domain.services.cultivo_service import CultivoService
 from diagnostico.domain.services.diagnostico_service import DiagnosticoService
 from diagnostico.domain.services.plan_abono_service import PlanAbonoService
-from diagnostico.infrastructure.persistence.in_memory_cultivo_repository import (
-    InMemoryCultivoRepository,
+from diagnostico.infrastructure.persistence.database import (
+    create_engine,
+    create_session_factory,
 )
-from diagnostico.infrastructure.persistence.in_memory_diagnostico_repository import (
-    InMemoryDiagnosticoRepository,
-    InMemoryPlanAbonoRepository,
-    InMemoryRecordatorioRepository,
+from diagnostico.infrastructure.persistence.postgres_cultivo_repository import (
+    PostgresCultivoRepository,
+)
+from diagnostico.infrastructure.persistence.postgres_diagnostico_repository import (
+    PostgresDiagnosticoRepository,
+)
+from diagnostico.infrastructure.persistence.postgres_plan_abono_repository import (
+    PostgresPlanAbonoRepository,
+    PostgresRecordatorioRepository,
 )
 from diagnostico.infrastructure.vision.mock_vision_provider import MockVisionProvider
 
@@ -45,37 +53,60 @@ logging.basicConfig(
 )
 logger = logging.getLogger("diagnostico")
 
+# Session factory global (se inicializa en lifespan)
+_session_factory: async_sessionmaker[AsyncSession] | None = None
+
+
+def _get_session_factory() -> async_sessionmaker[AsyncSession]:
+    if _session_factory is None:
+        raise RuntimeError("Session factory no inicializada")
+    return _session_factory
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    logger.info("diagnostico-service iniciando...")
+    global _session_factory
 
-    # Repositorios en memoria (en producción serían Postgres)
-    cultivo_repo = InMemoryCultivoRepository()
-    diagnostico_repo = InMemoryDiagnosticoRepository()
-    plan_repo = InMemoryPlanAbonoRepository()
-    rec_repo = InMemoryRecordatorioRepository()
+    settings = get_settings()
+    engine = create_engine(settings.database_url)
+    _session_factory = create_session_factory(engine)
     vision_provider = MockVisionProvider()
 
-    # Servicios
-    cultivo_svc = CultivoService(cultivo_repo)
-    diagnostico_svc = DiagnosticoService(diagnostico_repo, cultivo_repo, vision_provider)
-    plan_svc = PlanAbonoService(diagnostico_repo, plan_repo, rec_repo)
+    logger.info("diagnostico-service iniciando con PostgreSQL...")
 
-    # Inyectar en routers via override
-    app.dependency_overrides[_get_cultivo_service] = lambda: cultivo_svc
-    app.dependency_overrides[_get_diagnostico_service] = lambda: diagnostico_svc
-    app.dependency_overrides[_get_plan_service] = lambda: plan_svc
+    # Inyectar factories en routers via dependency_overrides
+    def get_cultivo_svc() -> CultivoService:
+        session = _get_session_factory()()
+        repo = PostgresCultivoRepository(session)
+        return CultivoService(repo)
+
+    def get_diagnostico_svc() -> DiagnosticoService:
+        session = _get_session_factory()()
+        cultivo_repo = PostgresCultivoRepository(session)
+        diag_repo = PostgresDiagnosticoRepository(session)
+        return DiagnosticoService(diag_repo, cultivo_repo, vision_provider)
+
+    def get_plan_svc() -> PlanAbonoService:
+        session = _get_session_factory()()
+        diag_repo = PostgresDiagnosticoRepository(session)
+        plan_repo = PostgresPlanAbonoRepository(session)
+        rec_repo = PostgresRecordatorioRepository(session)
+        return PlanAbonoService(diag_repo, plan_repo, rec_repo)
+
+    app.dependency_overrides[_get_cultivo_service] = get_cultivo_svc
+    app.dependency_overrides[_get_diagnostico_service] = get_diagnostico_svc
+    app.dependency_overrides[_get_plan_service] = get_plan_svc
 
     yield
 
+    await engine.dispose()
     logger.info("diagnostico-service detenido")
 
 
 app = FastAPI(
     title="nutrI-plantA diagnostico-service",
     description="Servicio de diagnóstico nutricional y fitosanitario en vid",
-    version="0.2.0",
+    version="0.3.0",
     docs_url="/api/v1/diagnostico/docs",
     openapi_url="/api/v1/diagnostico/openapi.json",
     lifespan=lifespan,
@@ -133,4 +164,4 @@ app.include_router(diagnostico_router)
 
 @app.get("/api/v1/diagnostico/health", tags=["health"])
 async def health() -> dict[str, str]:
-    return {"status": "ok", "service": "diagnostico-service", "version": "0.2.0"}
+    return {"status": "ok", "service": "diagnostico-service", "version": "0.3.0"}
