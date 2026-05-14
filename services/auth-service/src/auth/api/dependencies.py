@@ -5,7 +5,8 @@ Coordina el container global con la sesión de BD por request.
 """
 from collections.abc import AsyncGenerator
 
-from fastapi import Depends, Request
+import jwt as pyjwt
+from fastapi import Depends, Header, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.config import Settings
@@ -77,8 +78,39 @@ async def get_session_service(
         user_repo=user_repository,
         refresh_token_expire_days=7,
     )
+
+
 async def get_admin_service(
     user_repository: PostgresUserRepository = Depends(get_user_repository),
 ) -> AdminService:
     """Construir el AdminService."""
     return AdminService(user_repository=user_repository)
+
+
+async def get_current_claims(
+    request: Request,
+    authorization: str = Header(..., alias="Authorization"),
+) -> dict[str, object]:
+    """
+    Valida el JWT del header Authorization y retorna los claims.
+    Lanza 401 si el token es inválido o expirado.
+    """
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Token no proporcionado")
+    token = authorization.removeprefix("Bearer ")
+    token_service: TokenService = request.app.state.container.token_service()
+    try:
+        return token_service.decode_token(token)
+    except pyjwt.ExpiredSignatureError as err:
+        raise HTTPException(status_code=401, detail="Token expirado") from err
+    except pyjwt.InvalidTokenError as err:
+        raise HTTPException(status_code=401, detail="Token inválido") from err
+
+
+async def require_admin(
+    claims: dict[str, object] = Depends(get_current_claims),
+) -> dict[str, object]:
+    """Requiere que el token tenga rol ADMIN. Lanza 403 si no."""
+    if claims.get("role") != "ADMIN":
+        raise HTTPException(status_code=403, detail="Se requiere rol ADMIN")
+    return claims

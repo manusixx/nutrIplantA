@@ -1,8 +1,9 @@
 """Endpoints CRUD de cultivos — Sprint 5."""
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, status
+from fastapi import APIRouter, Depends, status
 
+from diagnostico.api.dependencies import CURRENT_USER_ID
 from diagnostico.api.dtos.diagnostico_dtos import (
     CultivoCreateRequest,
     CultivoResponse,
@@ -41,12 +42,12 @@ def _get_cultivo_service() -> CultivoService:
 )
 async def crear_cultivo(
     payload: CultivoCreateRequest,
-    x_user_id: UUID = Header(..., alias="X-User-Id"),
+    user_id: UUID = CURRENT_USER_ID,
     service: CultivoService = Depends(_get_cultivo_service),
 ) -> CultivoResponse:
     """Registrar un nuevo cultivo de vid para el usuario autenticado."""
     cultivo = await service.crear(
-        user_id=x_user_id,
+        user_id=user_id,
         nombre_finca=payload.nombre_finca,
         variedad=payload.variedad,
         vereda=payload.vereda,
@@ -63,11 +64,11 @@ async def crear_cultivo(
     summary="Listar cultivos del usuario",
 )
 async def listar_cultivos(
-    x_user_id: UUID = Header(..., alias="X-User-Id"),
+    user_id: UUID = CURRENT_USER_ID,
     service: CultivoService = Depends(_get_cultivo_service),
 ) -> list[CultivoResponse]:
     """Listar todos los cultivos del usuario autenticado."""
-    cultivos = await service.listar(x_user_id)
+    cultivos = await service.listar(user_id)
     return [_cultivo_to_response(c) for c in cultivos]
 
 
@@ -78,11 +79,11 @@ async def listar_cultivos(
 )
 async def obtener_cultivo(
     cultivo_id: UUID,
-    x_user_id: UUID = Header(..., alias="X-User-Id"),
+    user_id: UUID = CURRENT_USER_ID,
     service: CultivoService = Depends(_get_cultivo_service),
 ) -> CultivoResponse:
     """Obtener un cultivo específico del usuario autenticado."""
-    cultivo = await service.obtener(cultivo_id, x_user_id)
+    cultivo = await service.obtener(cultivo_id, user_id)
     return _cultivo_to_response(cultivo)
 
 
@@ -94,13 +95,13 @@ async def obtener_cultivo(
 async def actualizar_cultivo(
     cultivo_id: UUID,
     payload: CultivoUpdateRequest,
-    x_user_id: UUID = Header(..., alias="X-User-Id"),
+    user_id: UUID = CURRENT_USER_ID,
     service: CultivoService = Depends(_get_cultivo_service),
 ) -> CultivoResponse:
     """Actualizar datos de un cultivo del usuario autenticado."""
     cultivo = await service.actualizar(
         cultivo_id=cultivo_id,
-        user_id=x_user_id,
+        user_id=user_id,
         **payload.model_dump(exclude_none=True),
     )
     return _cultivo_to_response(cultivo)
@@ -113,8 +114,8 @@ async def actualizar_cultivo(
 )
 async def eliminar_cultivo(
     cultivo_id: UUID,
-    x_user_id: UUID = Header(..., alias="X-User-Id"),
+    user_id: UUID = CURRENT_USER_ID,
     service: CultivoService = Depends(_get_cultivo_service),
 ) -> None:
     """Eliminar un cultivo del usuario autenticado."""
-    await service.eliminar(cultivo_id, x_user_id)
+    await service.eliminar(cultivo_id, user_id)

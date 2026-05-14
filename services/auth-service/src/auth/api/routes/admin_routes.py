@@ -5,9 +5,14 @@ Sprint 8 — HU-15 (/me).
 """
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
-from auth.api.dependencies import get_admin_service, get_user_repository
+from auth.api.dependencies import (
+    get_admin_service,
+    get_current_claims,
+    get_user_repository,
+    require_admin,
+)
 from auth.api.dtos.admin_dto import (
     AprobarUsuarioRequest,
     MeResponse,
@@ -43,13 +48,13 @@ def _user_to_response(user: User) -> UserAdminResponse:
     summary="Datos del usuario autenticado (HU-15)",
 )
 async def me(
-    x_user_id: UUID = Header(..., alias="X-User-Id"),
+    claims: dict[str, object] = Depends(get_current_claims),
     user_repo: PostgresUserRepository = Depends(get_user_repository),
 ) -> MeResponse:
     """Retornar datos del usuario autenticado extraídos del JWT."""
-    user = await user_repo.find_by_id(x_user_id)
+    user_id = UUID(str(claims["sub"]))
+    user = await user_repo.find_by_id(user_id)
     if user is None:
-        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     return MeResponse(
         id=user.id,
@@ -69,6 +74,7 @@ async def me(
     summary="Listar todos los usuarios (HU-18)",
 )
 async def listar_usuarios(
+    _: dict[str, object] = Depends(require_admin),
     service: AdminService = Depends(get_admin_service),
 ) -> list[UserAdminResponse]:
     """Listar todos los usuarios del sistema. Solo ADMIN."""
@@ -82,6 +88,7 @@ async def listar_usuarios(
     summary="Listar usuarios pendientes de aprobación (HU-19)",
 )
 async def listar_pendientes(
+    _: dict[str, object] = Depends(require_admin),
     service: AdminService = Depends(get_admin_service),
 ) -> list[UserAdminResponse]:
     """Listar usuarios en estado PENDIENTE_APROBACION."""
@@ -97,6 +104,7 @@ async def listar_pendientes(
 async def aprobar_usuario(
     user_id: UUID,
     payload: AprobarUsuarioRequest,
+    _: dict[str, object] = Depends(require_admin),
     service: AdminService = Depends(get_admin_service),
 ) -> UserAdminResponse:
     """Aprobar un usuario asignándole un rol."""
@@ -112,6 +120,7 @@ async def aprobar_usuario(
 )
 async def rechazar_usuario(
     user_id: UUID,
+    _: dict[str, object] = Depends(require_admin),
     service: AdminService = Depends(get_admin_service),
 ) -> UserAdminResponse:
     """Rechazar un usuario pendiente."""
@@ -126,6 +135,7 @@ async def rechazar_usuario(
 )
 async def desactivar_usuario(
     user_id: UUID,
+    _: dict[str, object] = Depends(require_admin),
     service: AdminService = Depends(get_admin_service),
 ) -> UserAdminResponse:
     """Desactivar un usuario aprobado."""
@@ -141,6 +151,7 @@ async def desactivar_usuario(
 async def reactivar_usuario(
     user_id: UUID,
     payload: ReactivarUsuarioRequest,
+    _: dict[str, object] = Depends(require_admin),
     service: AdminService = Depends(get_admin_service),
 ) -> UserAdminResponse:
     """Reactivar un usuario desactivado."""
