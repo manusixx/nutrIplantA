@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useSearchParams, Link, useParams } from 'react-router-dom'
 import { cultivosApi, diagnosticosApi, planesApi } from '../../services/api'
 import toast from 'react-hot-toast'
@@ -7,7 +7,7 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 // ============================================================
-// Nuevo Diagnóstico — fiel al prototipo diagn_stico_nutricional_1
+// Nuevo Diagnóstico
 // ============================================================
 export function NuevoDiagnosticoPage() {
   const navigate = useNavigate()
@@ -16,13 +16,25 @@ export function NuevoDiagnosticoPage() {
   const [cultivos, setCultivos] = useState<Cultivo[]>([])
   const [cultivoId, setCultivoId] = useState(cultivoPresel)
   const [fotoUrl, setFotoUrl] = useState('')
+  const [fotoNombre, setFotoNombre] = useState('')
   const [fase, setFase] = useState<'captura' | 'analizando' | 'listo'>('captura')
   const [isLoading, setIsLoading] = useState(false)
   const [diagnosticoId, setDiagnosticoId] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     cultivosApi.listar().then(r => setCultivos(r.data))
   }, [])
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setFotoUrl(`minio://diagnosticos/${file.name}`)
+      setFotoNombre(file.name)
+      toast.success(`Imagen seleccionada: ${file.name}`)
+    }
+  }
 
   const handleDiagnosticar = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -54,17 +66,20 @@ export function NuevoDiagnosticoPage() {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Panel izquierdo: captura */}
         <div className="lg:col-span-7 space-y-6">
-          {/* Zona de carga de foto */}
           <div className="card p-8">
             <h3 className="font-display text-lg font-semibold text-[#00346f] mb-6 flex items-center gap-2">
               <span className="material-symbols-outlined text-[#004A99]">add_a_photo</span>
               Captura de Muestra
             </h3>
 
-            {/* Drop zone */}
-            <div className="relative w-full aspect-video bg-surface-container rounded overflow-hidden border-2 border-dashed border-[#c2c6d3] flex flex-col items-center justify-center hover:border-[#004A99] transition-colors cursor-pointer group mb-6">
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+            <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
+
+            <div
+              onClick={() => fase === 'captura' && fileInputRef.current?.click()}
+              className="relative w-full aspect-video bg-surface-container rounded overflow-hidden border-2 border-dashed border-[#c2c6d3] flex flex-col items-center justify-center hover:border-[#004A99] transition-colors cursor-pointer mb-6"
+            >
               {fase === 'analizando' ? (
                 <>
                   <div className="scan-line" />
@@ -79,11 +94,18 @@ export function NuevoDiagnosticoPage() {
                   <p className="font-display font-semibold text-[#003f0b] text-lg">Análisis completado</p>
                   <p className="text-sm text-[#424751] mt-1">Revisa el resultado en el panel derecho</p>
                 </div>
+              ) : fotoNombre ? (
+                <div className="flex flex-col items-center text-center px-6">
+                  <span className="material-symbols-outlined text-[#004A99] text-6xl mb-3" style={{ fontVariationSettings: "'FILL' 1" }}>image</span>
+                  <p className="font-display font-semibold text-[#004A99] text-lg mb-1">Imagen lista</p>
+                  <p className="text-sm text-[#737783] max-w-xs truncate">{fotoNombre}</p>
+                  <p className="text-xs text-[#004A99] mt-2 underline">Clic para cambiar la imagen</p>
+                </div>
               ) : (
                 <div className="flex flex-col items-center text-center px-6">
                   <span className="material-symbols-outlined text-[#004A99] text-6xl mb-3">add_a_photo</span>
-                  <p className="font-display font-semibold text-[#424751] text-lg mb-1">Cargue o Tome una Foto</p>
-                  <p className="text-sm text-[#737783]">Para mejores resultados, asegúrese de que la hoja esté bien iluminada y centrada.</p>
+                  <p className="font-display font-semibold text-[#424751] text-lg mb-1">Clic para seleccionar foto</p>
+                  <p className="text-sm text-[#737783]">JPG, PNG — la hoja debe estar bien iluminada y centrada</p>
                 </div>
               )}
             </div>
@@ -99,35 +121,37 @@ export function NuevoDiagnosticoPage() {
                 </select>
               </div>
 
-              <div>
-                <label className="input-label">URL de imagen (opcional)</label>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#737783] text-xl">image</span>
-                  <input type="text" value={fotoUrl} onChange={e => setFotoUrl(e.target.value)}
-                    placeholder="minio://diagnosticos/foto.jpg — o deje vacío para usar muestra"
-                    className="input-field pl-10" />
+              {fotoNombre && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-surface-container-low rounded border border-[#c2c6d3]">
+                  <span className="material-symbols-outlined text-[#004A99] text-lg">image</span>
+                  <span className="text-xs text-[#424751] truncate flex-1">{fotoNombre}</span>
+                  <span className="material-symbols-outlined text-[#005914] text-lg flex-shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
                 </div>
-              </div>
+              )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <button type="button" onClick={() => setFotoUrl('')}
-                  className="btn-secondary py-4 flex items-center justify-center gap-2">
-                  <span className="material-symbols-outlined">camera_alt</span>
+              <div className="grid grid-cols-2 gap-3">
+                <button type="button" onClick={() => cameraInputRef.current?.click()}
+                  className="btn-secondary py-3 flex items-center justify-center gap-2 text-sm">
+                  <span className="material-symbols-outlined text-lg">camera_alt</span>
                   Tomar foto
                 </button>
-                <button type="submit" disabled={isLoading || fase === 'analizando'}
-                  className="btn-primary py-4">
-                  {fase === 'analizando' ? (
-                    <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Analizando...</>
-                  ) : (
-                    <><span className="material-symbols-outlined">analytics</span>Analizar con IA</>
-                  )}
+                <button type="button" onClick={() => fileInputRef.current?.click()}
+                  className="btn-secondary py-3 flex items-center justify-center gap-2 text-sm">
+                  <span className="material-symbols-outlined text-lg">upload_file</span>
+                  Subir desde galería
                 </button>
               </div>
+
+              <button type="submit" disabled={isLoading || fase === 'analizando'} className="btn-primary w-full py-4">
+                {fase === 'analizando' ? (
+                  <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Analizando con IA...</>
+                ) : (
+                  <><span className="material-symbols-outlined">analytics</span>Analizar con IA</>
+                )}
+              </button>
             </form>
           </div>
 
-          {/* Panel de procesamiento IA */}
           {fase === 'analizando' && (
             <div className="card p-8">
               <div className="flex items-center gap-3 mb-6">
@@ -146,7 +170,6 @@ export function NuevoDiagnosticoPage() {
           )}
         </div>
 
-        {/* Panel derecho: resultado o placeholder */}
         <div className="lg:col-span-5">
           {fase === 'listo' && diagnosticoId ? (
             <div className="card overflow-hidden">
@@ -154,7 +177,7 @@ export function NuevoDiagnosticoPage() {
                 <span className="font-display font-semibold">Resultado del Análisis</span>
                 <Link to={`/diagnosticos/${diagnosticoId}`}
                   className="bg-[#7ecf79] text-[#002204] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider hover:bg-[#a3f69c] transition-colors">
-                  Ver informe completo →
+                  Ver informe →
                 </Link>
               </div>
               <div className="p-6">
@@ -180,7 +203,6 @@ export function NuevoDiagnosticoPage() {
                 <span className="material-symbols-outlined text-5xl text-[#c2c6d3] mb-4 block">pending_actions</span>
                 <p className="text-sm text-[#737783]">El resultado aparecerá aquí después de analizar la imagen</p>
               </div>
-              {/* Info metodológica */}
               <div className="border-t border-[#c2c6d3] px-6 py-4 bg-surface-container-low">
                 <h4 className="font-display text-xs font-bold text-[#004A99] uppercase tracking-wide mb-3">Deficiencias detectables</h4>
                 <div className="flex flex-wrap gap-1.5">
@@ -198,7 +220,7 @@ export function NuevoDiagnosticoPage() {
 }
 
 // ============================================================
-// Detalle de diagnóstico — fiel al prototipo diagn_stico_nutricional_2
+// Detalle de diagnóstico
 // ============================================================
 export function DetalleDiagnosticoPage() {
   const { id } = useParams<{ id: string }>()
@@ -236,10 +258,10 @@ export function DetalleDiagnosticoPage() {
 
   const confianzaPct = Math.round(diagnostico.confianza_global * 100)
   const estadoConfig = {
-    SALUDABLE: { header: 'bg-[#005914]', text: '#7ecf79', badge: 'chip-saludable', label: 'Saludable', icon: 'check_circle' },
-    REQUIERE_ATENCION: { header: 'bg-amber-700', text: '#fef3c7', badge: 'chip-atencion', label: 'Requiere atención', icon: 'warning' },
-    CRITICO: { header: 'bg-[#93000a]', text: '#ffdad6', badge: 'chip-critico', label: 'Estado crítico', icon: 'dangerous' },
-  }[diagnostico.estado_general]
+    SALUDABLE: { header: 'bg-[#005914]', text: '#7ecf79', label: 'Saludable', icon: 'check_circle' },
+    REQUIERE_ATENCION: { header: 'bg-amber-700', text: '#fef3c7', label: 'Requiere atención', icon: 'warning' },
+    CRITICO: { header: 'bg-[#93000a]', text: '#ffdad6', label: 'Estado crítico', icon: 'dangerous' },
+  }[diagnostico.estado_general]!
 
   return (
     <div className="space-y-6">
@@ -260,9 +282,7 @@ export function DetalleDiagnosticoPage() {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Columna izquierda: imagen + datos técnicos */}
         <div className="lg:col-span-7 space-y-6">
-          {/* Card de imagen */}
           <div className="card p-6">
             <h3 className="font-display font-semibold text-[#00346f] mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-[#004A99]">image_search</span>
@@ -287,14 +307,11 @@ export function DetalleDiagnosticoPage() {
               </div>
               <div className="text-center p-3 bg-surface-container-low rounded">
                 <p className="data-label mb-1">Fase fenológica</p>
-                <p className="font-display font-bold text-sm text-[#191c1d]">
-                  {diagnostico.estado_fenologico || '—'}
-                </p>
+                <p className="font-display font-bold text-sm text-[#191c1d]">{diagnostico.estado_fenologico || '—'}</p>
               </div>
             </div>
           </div>
 
-          {/* Descripción del hallazgo */}
           {diagnostico.descripcion_hallazgo && (
             <div className="card p-6">
               <h3 className="font-display font-semibold text-[#00346f] mb-3 flex items-center gap-2">
@@ -305,7 +322,6 @@ export function DetalleDiagnosticoPage() {
             </div>
           )}
 
-          {/* Recomendación técnica */}
           {diagnostico.recomendacion_tecnica && (
             <div className="card p-6 border-l-4 border-[#004A99]">
               <h3 className="font-display font-semibold text-[#00346f] mb-3 flex items-center gap-2">
@@ -317,9 +333,7 @@ export function DetalleDiagnosticoPage() {
           )}
         </div>
 
-        {/* Columna derecha: resultado */}
         <div className="lg:col-span-5 space-y-4">
-          {/* Header de resultado */}
           <div className="card overflow-hidden">
             <div className={`${estadoConfig.header} px-6 py-4 flex justify-between items-center`}>
               <span className="font-display font-semibold" style={{ color: estadoConfig.text }}>
@@ -332,9 +346,7 @@ export function DetalleDiagnosticoPage() {
             <div className="p-6">
               <div className="flex items-start gap-4 mb-6">
                 <div className="bg-surface-container-low p-3 rounded flex-shrink-0">
-                  <span className="material-symbols-outlined text-3xl" style={{ color: estadoConfig.header.replace('bg-[', '').replace(']', '') }}>
-                    {estadoConfig.icon}
-                  </span>
+                  <span className="material-symbols-outlined text-3xl text-[#004A99]">{estadoConfig.icon}</span>
                 </div>
                 <div>
                   <h2 className="font-display text-xl font-bold text-[#191c1d] mb-0.5">{estadoConfig.label}</h2>
@@ -342,7 +354,6 @@ export function DetalleDiagnosticoPage() {
                 </div>
               </div>
 
-              {/* Deficiencias */}
               {diagnostico.deficiencias.length > 0 && (
                 <div className="mb-4">
                   <h4 className="data-label mb-3">Deficiencias detectadas</h4>
@@ -353,9 +364,7 @@ export function DetalleDiagnosticoPage() {
                           <span className="font-display font-bold text-xs text-amber-800">{d.nutriente}</span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-display text-sm font-semibold text-[#191c1d]">
-                            Deficiencia de {d.nutriente}
-                          </p>
+                          <p className="font-display text-sm font-semibold text-[#191c1d]">Deficiencia de {d.nutriente}</p>
                           <p className="text-xs text-[#737783] mt-0.5 leading-relaxed">{d.evidencia_visual}</p>
                         </div>
                         <span className={`flex-shrink-0 ${d.confianza === 'alta' ? 'chip-critico' : d.confianza === 'media' ? 'chip-atencion' : 'chip-neutral'}`}>
@@ -367,7 +376,6 @@ export function DetalleDiagnosticoPage() {
                 </div>
               )}
 
-              {/* Patologías */}
               {diagnostico.patologias.length > 0 && (
                 <div className="mb-4">
                   <h4 className="data-label mb-3">Patologías detectadas</h4>
@@ -378,9 +386,7 @@ export function DetalleDiagnosticoPage() {
                         <div>
                           <p className="font-display text-sm font-semibold text-[#93000a]">{p.nombre}</p>
                           <p className="text-xs text-[#410003] mt-0.5">{p.evidencia_visual}</p>
-                          <p className="text-xs font-bold text-[#b6171e] mt-1">
-                            Urgencia: {p.urgencia}
-                          </p>
+                          <p className="text-xs font-bold text-[#b6171e] mt-1">Urgencia: {p.urgencia}</p>
                         </div>
                       </div>
                     ))}
@@ -388,26 +394,21 @@ export function DetalleDiagnosticoPage() {
                 </div>
               )}
 
-              {/* Sin anomalías */}
               {diagnostico.deficiencias.length === 0 && diagnostico.patologias.length === 0 && (
                 <div className="flex items-center gap-3 p-4 bg-[#a3f69c] rounded mb-4">
                   <span className="material-symbols-outlined text-[#003f0b]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                  <p className="text-sm font-display font-semibold text-[#002204]">
-                    No se detectaron deficiencias ni patologías
-                  </p>
+                  <p className="text-sm font-display font-semibold text-[#002204]">No se detectaron deficiencias ni patologías</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Acción: generar plan */}
           {!diagnostico.patologias.some(p => p.urgencia === 'alta') ? (
             <button onClick={handleGenerarPlan} disabled={generandoPlan} className="btn-primary w-full py-4">
-              {generandoPlan ? (
-                <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Generando plan...</>
-              ) : (
-                <><span className="material-symbols-outlined">assignment</span>Generar plan de abono</>
-              )}
+              {generandoPlan
+                ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Generando plan...</>
+                : <><span className="material-symbols-outlined">assignment</span>Generar plan de abono</>
+              }
             </button>
           ) : (
             <div className="card p-4 border-l-4 border-[#b6171e]">
@@ -415,9 +416,7 @@ export function DetalleDiagnosticoPage() {
                 <span className="material-symbols-outlined text-[#b6171e] flex-shrink-0">block</span>
                 <div>
                   <p className="font-display text-sm font-bold text-[#93000a]">Plan de abono no disponible</p>
-                  <p className="text-xs text-[#424751] mt-1">
-                    Existen patologías de urgencia alta. Trate primero la infección antes de fertilizar.
-                  </p>
+                  <p className="text-xs text-[#424751] mt-1">Trate primero la patología antes de fertilizar.</p>
                 </div>
               </div>
             </div>
@@ -429,7 +428,7 @@ export function DetalleDiagnosticoPage() {
 }
 
 // ============================================================
-// Historial — fiel al prototipo historial_de_diagn_sticos_1
+// Historial
 // ============================================================
 export function HistorialPage() {
   const [diagnosticos, setDiagnosticos] = useState<Diagnostico[]>([])
@@ -448,7 +447,7 @@ export function HistorialPage() {
 
   const estChip = (e: string) => {
     if (e === 'SALUDABLE') return <span className="chip-saludable">Saludable</span>
-    if (e === 'CRITICO') return <><span className="w-2.5 h-2.5 rounded-full bg-[#b6171e] inline-block mr-1.5" /><span className="chip-critico">Crítico</span></>
+    if (e === 'CRITICO') return <span className="chip-critico">Crítico</span>
     return <span className="chip-atencion">Requiere atención</span>
   }
 
@@ -459,7 +458,6 @@ export function HistorialPage() {
         <p className="text-[#424751] text-sm">Consulta y filtra los resultados de análisis previos realizados en campo.</p>
       </header>
 
-      {/* Filtros */}
       <section className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
         <div className="md:col-span-6">
           <label className="input-label">Buscar por ID o estado</label>
@@ -484,7 +482,6 @@ export function HistorialPage() {
         </div>
       </section>
 
-      {/* Tabla */}
       {isLoading ? (
         <div className="flex items-center justify-center h-48">
           <div className="w-10 h-10 border-2 border-[#004A99] border-t-transparent rounded-full animate-spin" />
