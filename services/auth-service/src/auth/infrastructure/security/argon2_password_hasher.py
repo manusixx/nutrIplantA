@@ -23,14 +23,14 @@ class Argon2PasswordHasher(IPasswordHasher):
         """Generar hash Argon2id de la contraseña."""
         if not plain_password:
             raise ValueError("La contraseña no puede estar vacía")
-        return self._hasher.hash(plain_password)
+        return str(self._hasher.hash(plain_password))
 
     def verify(self, plain_password: str, password_hash: str) -> bool:
         """Verificar contraseña contra hash. False si no coincide o hay error."""
         if not plain_password or not password_hash:
             return False
         try:
-            return self._hasher.verify(plain_password, password_hash)
+            return bool(self._hasher.verify(plain_password, password_hash))
         except Exception:
             # Cualquier error en verificación se trata como falla
             # (hash corrupto, formato distinto, etc.)

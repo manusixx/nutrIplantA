@@ -1,8 +1,9 @@
 """Endpoints de diagnóstico y plan de abono — Sprints 5 y 6."""
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, status
+from fastapi import APIRouter, Depends, status
 
+from diagnostico.api.dependencies import CURRENT_USER_ID
 from diagnostico.api.dtos.diagnostico_dtos import (
     AplicacionResponse,
     CompletarRecordatorioRequest,
@@ -116,13 +117,13 @@ def _get_plan_service() -> PlanAbonoService:
 )
 async def crear_diagnostico(
     payload: DiagnosticoCreateRequest,
-    x_user_id: UUID = Header(..., alias="X-User-Id"),
+    user_id: UUID = CURRENT_USER_ID,
     service: DiagnosticoService = Depends(_get_diagnostico_service),
 ) -> DiagnosticoResponse:
     """Analizar una foto de hoja y crear el diagnóstico nutricional."""
     diagnostico = await service.crear_diagnostico(
         cultivo_id=payload.cultivo_id,
-        user_id=x_user_id,
+        user_id=user_id,
         foto_url=payload.foto_url,
     )
     return _diag_to_response(diagnostico)
@@ -136,11 +137,11 @@ async def crear_diagnostico(
 async def listar_diagnosticos(
     limit: int = 20,
     offset: int = 0,
-    x_user_id: UUID = Header(..., alias="X-User-Id"),
+    user_id: UUID = CURRENT_USER_ID,
     service: DiagnosticoService = Depends(_get_diagnostico_service),
 ) -> list[DiagnosticoResponse]:
     """Listar historial de diagnósticos del usuario autenticado."""
-    diagnosticos = await service.historial_usuario(x_user_id, limit=limit, offset=offset)
+    diagnosticos = await service.historial_usuario(user_id, limit=limit, offset=offset)
     return [_diag_to_response(d) for d in diagnosticos]
 
 
@@ -151,11 +152,11 @@ async def listar_diagnosticos(
 )
 async def obtener_diagnostico(
     diagnostico_id: UUID,
-    x_user_id: UUID = Header(..., alias="X-User-Id"),
+    user_id: UUID = CURRENT_USER_ID,
     service: DiagnosticoService = Depends(_get_diagnostico_service),
 ) -> DiagnosticoResponse:
     """Obtener un diagnóstico específico."""
-    diagnostico = await service.obtener(diagnostico_id, x_user_id)
+    diagnostico = await service.obtener(diagnostico_id, user_id)
     return _diag_to_response(diagnostico)
 
 
@@ -166,11 +167,11 @@ async def obtener_diagnostico(
 )
 async def diagnosticos_por_cultivo(
     cultivo_id: UUID,
-    x_user_id: UUID = Header(..., alias="X-User-Id"),
+    user_id: UUID = CURRENT_USER_ID,
     service: DiagnosticoService = Depends(_get_diagnostico_service),
 ) -> list[DiagnosticoResponse]:
     """Listar diagnósticos de un cultivo específico."""
-    diagnosticos = await service.historial_cultivo(cultivo_id, x_user_id)
+    diagnosticos = await service.historial_cultivo(cultivo_id, user_id)
     return [_diag_to_response(d) for d in diagnosticos]
 
 
@@ -185,11 +186,11 @@ async def diagnosticos_por_cultivo(
 )
 async def generar_plan(
     payload: PlanAbonoCreateRequest,
-    x_user_id: UUID = Header(..., alias="X-User-Id"),
+    user_id: UUID = CURRENT_USER_ID,
     service: PlanAbonoService = Depends(_get_plan_service),
 ) -> PlanAbonoResponse:
     """Generar un plan de abono a partir de un diagnóstico."""
-    plan = await service.generar_plan(payload.diagnostico_id, x_user_id)
+    plan = await service.generar_plan(payload.diagnostico_id, user_id)
     return _plan_to_response(plan)
 
 
@@ -199,11 +200,11 @@ async def generar_plan(
     summary="Listar planes de abono (HU-12)",
 )
 async def listar_planes(
-    x_user_id: UUID = Header(..., alias="X-User-Id"),
+    user_id: UUID = CURRENT_USER_ID,
     service: PlanAbonoService = Depends(_get_plan_service),
 ) -> list[PlanAbonoResponse]:
     """Listar planes de abono del usuario."""
-    planes = await service.listar_planes(x_user_id)
+    planes = await service.listar_planes(user_id)
     return [_plan_to_response(p) for p in planes]
 
 
@@ -216,11 +217,11 @@ async def listar_planes(
     summary="Listar recordatorios pendientes (HU-16)",
 )
 async def listar_recordatorios(
-    x_user_id: UUID = Header(..., alias="X-User-Id"),
+    user_id: UUID = CURRENT_USER_ID,
     service: PlanAbonoService = Depends(_get_plan_service),
 ) -> list[RecordatorioResponse]:
     """Listar recordatorios pendientes del usuario."""
-    recordatorios = await service.listar_recordatorios_pendientes(x_user_id)
+    recordatorios = await service.listar_recordatorios_pendientes(user_id)
     return [_rec_to_response(r) for r in recordatorios]
 
 
@@ -232,9 +233,9 @@ async def listar_recordatorios(
 async def completar_recordatorio(
     recordatorio_id: UUID,
     payload: CompletarRecordatorioRequest,
-    x_user_id: UUID = Header(..., alias="X-User-Id"),
+    user_id: UUID = CURRENT_USER_ID,
     service: PlanAbonoService = Depends(_get_plan_service),
 ) -> RecordatorioResponse:
     """Marcar un recordatorio de aplicación como completado."""
-    rec = await service.completar_recordatorio(recordatorio_id, x_user_id, payload.notas)
+    rec = await service.completar_recordatorio(recordatorio_id, user_id, payload.notas)
     return _rec_to_response(rec)
