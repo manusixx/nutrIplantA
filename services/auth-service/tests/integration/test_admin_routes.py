@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 import pytest
 from fastapi import FastAPI, HTTPException
