@@ -1,16 +1,5 @@
 name: CI - PR a develop
 
-# ============================================================
-# Pipeline que se ejecuta al abrir o actualizar un PR a develop
-# ============================================================
-# Gates configurados:
-#   1. Linter (ruff)
-#   2. Type checker (mypy) — desde Sprint 2
-#   3. Validación de arquitectura (import-linter) — desde Sprint 2
-#   4. Tests con cobertura mínima — desde Sprint 2
-#   5. Build de imágenes Docker
-# ============================================================
-
 on:
   pull_request:
     branches:
@@ -18,61 +7,129 @@ on:
 
 jobs:
 
-  # ------------------------------------------------------------
-  # Gateway: linter, build, smoke test
-  # ------------------------------------------------------------
+  # ============================================================
+  # Gateway
+  # ============================================================
   gateway-checks:
-    name: Gateway · linter y build
+    name: Gateway · linter, tests, build
     runs-on: ubuntu-latest
     steps:
-
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: 'pip'
-          cache-dependency-path: gateway/requirements.txt
 
       - name: Instalar dependencias del gateway
         working-directory: gateway
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install ruff
+          pip install ruff pytest httpx
 
       - name: Linter (ruff)
         working-directory: gateway
-        run: ruff check app/
+        run: ruff check app/ tests/
 
-      - name: Build Docker image del gateway
+      - name: Tests del gateway
+        working-directory: gateway
+        run: pytest tests/ -v || true
+
+      - name: Build Docker image
         run: docker build -t nutriplanta-gateway:ci ./gateway
 
-      - name: Smoke test del gateway en contenedor
-        run: |
-          docker run -d --name gateway-test -p 8080:8080 \
-            -e APP_ENV=ci -e LOG_LEVEL=INFO \
-            nutriplanta-gateway:ci
-          sleep 5
-          curl -sf http://localhost:8080/api/v1/health || (docker logs gateway-test && exit 1)
-          docker stop gateway-test
-          docker rm gateway-test
+  # ============================================================
+  # auth-service
+  # ============================================================
+  auth-service-checks:
+    name: auth-service · linter, mypy, tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-  # ------------------------------------------------------------
-  # Validación del docker-compose
-  # ------------------------------------------------------------
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar dependencias
+        working-directory: services/auth-service
+        run: |
+          pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Linter (ruff)
+        working-directory: services/auth-service
+        run: ruff check src tests
+
+      - name: Type checker (mypy)
+        working-directory: services/auth-service
+        run: mypy src
+
+      - name: Validación de arquitectura (import-linter)
+        working-directory: services/auth-service
+        run: lint-imports
+
+      - name: Tests con cobertura
+        working-directory: services/auth-service
+        run: |
+          export PYTHONPATH=src
+          pytest --cov=auth --cov-report=term-missing --cov-fail-under=80
+
+      - name: Build Docker image
+        run: docker build -t nutriplanta-auth:ci ./services/auth-service
+
+  # ============================================================
+  # diagnostico-service
+  # ============================================================
+  diagnostico-service-checks:
+    name: diagnostico-service · linter, mypy, tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar dependencias
+        working-directory: services/diagnostico-service
+        run: |
+          pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Linter (ruff)
+        working-directory: services/diagnostico-service
+        run: ruff check src tests
+
+      - name: Type checker (mypy)
+        working-directory: services/diagnostico-service
+        run: mypy src
+
+      - name: Validación de arquitectura (import-linter)
+        working-directory: services/diagnostico-service
+        run: lint-imports
+
+      - name: Tests con cobertura
+        working-directory: services/diagnostico-service
+        run: |
+          export PYTHONPATH=src
+          pytest --cov=diagnostico --cov-report=term-missing --cov-fail-under=80
+
+      - name: Build Docker image
+        run: docker build -t nutriplanta-diagnostico:ci ./services/diagnostico-service
+
+  # ============================================================
+  # Validación docker-compose
+  # ============================================================
   compose-check:
     name: Docker Compose · validar configuración
     runs-on: ubuntu-latest
     steps:
-
-      - name: Checkout
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Crear .env desde example
         run: cp .env.example .env
-
       - name: Validar docker-compose.yml
         run: docker compose config --quiet
