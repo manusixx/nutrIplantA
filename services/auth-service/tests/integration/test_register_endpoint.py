@@ -206,6 +206,12 @@ class TestRegisterEndpoint:
             async def find_by_id(self, user_id):  # type: ignore[no-untyped-def]
                 return None
 
+            async def find_all(self):
+                return []
+
+            async def find_by_status(self, status):
+                return []
+
             async def email_exists(self, email):  # type: ignore[no-untyped-def]
                 return False
 

@@ -89,3 +89,18 @@ class PostgresUserRepository(IUserRepository):
             created_at=user.created_at,
             updated_at=user.updated_at,
         )
+
+    async def find_by_status(self, status: UserStatus) -> list[User]:
+        """Buscar usuarios por estado."""
+        from sqlalchemy import select as sa_select
+        stmt = sa_select(UserModel).where(UserModel.status == status.value)
+        result = await self._session.execute(stmt)
+        return [self._to_domain(row) for row in result.scalars().all()]
+
+    async def find_all(self) -> list[User]:
+        """Listar todos los usuarios."""
+        from sqlalchemy import select as sa_select
+        stmt = sa_select(UserModel)
+        result = await self._session.execute(stmt)
+        return [self._to_domain(row) for row in result.scalars().all()]
+

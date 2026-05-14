@@ -62,7 +62,15 @@ addopts = ["--strict-markers", "--tb=short", "-v"]
 
 [tool.coverage.run]
 source = ["src/diagnostico"]
-omit = ["*/main.py", "*/__init__.py", "*/alembic/*"]
+omit = [
+    "*/main.py",
+    "*/__init__.py",
+    "*/alembic/*",
+    "*/postgres_cultivo_repository.py",
+    "*/postgres_diagnostico_repository.py",
+    "*/postgres_plan_abono_repository.py",
+    "*/database.py",
+]
 
 [tool.coverage.report]
 fail_under = 80

@@ -1,6 +1,6 @@
 # ============================================================
-# nutrI-plantA — Sprints 2, 3 y 4
-# Stack completo: postgres + minio + gateway + auth + diagnostico
+# nutrI-plantA — Sprints 1, 2, 3, 4, 5, 6, 7 y 8
+# Stack completo: postgres + minio + gateway + auth + diagnostico + sugerencia + plan + recordatorio
 # ============================================================
 
 services:
@@ -198,8 +198,8 @@ services:
     depends_on:
       auth-service:
         condition: service_healthy
-    #  diagnostico-service:
-    #    condition: service_healthy
+      diagnostico-service:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
       interval: 30s

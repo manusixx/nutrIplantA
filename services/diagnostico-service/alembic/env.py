@@ -4,6 +4,7 @@ from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
 from alembic import context
+from diagnostico.infrastructure.persistence.models import DiagnosticoBase
 
 config = context.config
 
@@ -21,7 +22,7 @@ config.set_main_option(
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = None  # Se actualiza cuando se añadan modelos SQLAlchemy
+target_metadata = DiagnosticoBase.metadata # Se actualiza cuando se añadan modelos SQLAlchemy
 
 
 def run_migrations_offline() -> None:
@@ -32,6 +33,8 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         include_schemas=True,
+        version_table="alembic_version_diagnostico",
+        version_table_schema="diagnostico",
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -48,6 +51,8 @@ def run_migrations_online() -> None:
             connection=connection,
             target_metadata=target_metadata,
             include_schemas=True,
+            version_table="alembic_version_diagnostico",
+            version_table_schema="diagnostico",
         )
         with context.begin_transaction():
             context.run_migrations()

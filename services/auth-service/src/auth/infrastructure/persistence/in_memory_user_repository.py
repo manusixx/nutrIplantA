@@ -6,7 +6,7 @@ Los datos se almacenan en un dict y se pierden al destruir la instancia.
 """
 from uuid import UUID
 
-from auth.domain.models.user import User
+from auth.domain.models.user import User, UserStatus
 from auth.domain.repositories.i_user_repository import IUserRepository
 
 
@@ -42,3 +42,10 @@ class InMemoryUserRepository(IUserRepository):
     def count(self) -> int:
         """Número de usuarios almacenados."""
         return len(self._users)
+
+    async def find_by_status(self, status: UserStatus) -> list[User]:
+        return [u for u in self._users.values() if u.status == status]
+
+    async def find_all(self) -> list[User]:
+        return list(self._users.values())
+

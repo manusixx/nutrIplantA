@@ -1,0 +1,127 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Public+Sans:wght@300;400;500;600;700&display=block');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Public Sans', system-ui, sans-serif;
+    background-color: #f8f9fa;
+    color: #191c1d;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, .font-display {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+  }
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+  user-select: none;
+}
+
+@layer components {
+  /* ─── Botones ─── */
+  .btn-primary {
+    @apply bg-[#004A99] text-white font-semibold px-6 py-3 rounded
+           hover:bg-[#00346f] transition-all duration-200 flex items-center
+           justify-center gap-2 text-sm tracking-wide
+           disabled:opacity-50 disabled:cursor-not-allowed
+           focus:outline-none focus:ring-2 focus:ring-[#004A99] focus:ring-offset-2;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .btn-secondary {
+    @apply bg-white border border-[#b6171e] text-[#b6171e] font-semibold px-6 py-3 rounded
+           hover:bg-red-50 transition-all duration-200 flex items-center
+           justify-center gap-2 text-sm tracking-wide
+           focus:outline-none focus:ring-2 focus:ring-[#b6171e] focus:ring-offset-2;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .btn-ghost {
+    @apply text-[#004A99] font-semibold px-4 py-2 rounded
+           hover:bg-blue-50 transition-all duration-200 text-sm;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+
+  /* ─── Inputs ─── */
+  .input-field {
+    @apply w-full px-4 py-3 border border-[#c2c6d3] bg-white rounded
+           focus:outline-none focus:border-[#004A99] focus:ring-1 focus:ring-[#004A99]
+           text-sm text-[#191c1d] placeholder:text-[#737783]
+           transition-all duration-150;
+    font-family: 'Public Sans', sans-serif;
+  }
+  .input-label {
+    @apply block text-xs font-semibold tracking-wide mb-1.5 text-[#004A99] uppercase;
+    font-family: 'Public Sans', sans-serif;
+  }
+
+  /* ─── Cards ─── */
+  .card {
+    @apply bg-white border border-[#c2c6d3] rounded shadow-sm;
+  }
+  .card-hover {
+    @apply hover:shadow-md transition-shadow duration-200;
+  }
+
+  /* ─── Chips de estado ─── */
+  .chip-saludable {
+    @apply bg-[#a3f69c] text-[#002204] text-xs font-bold px-2.5 py-1 rounded-full;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .chip-atencion {
+    @apply bg-yellow-100 text-yellow-800 text-xs font-bold px-2.5 py-1 rounded-full;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .chip-critico {
+    @apply bg-[#ffdad6] text-[#93000a] text-xs font-bold px-2.5 py-1 rounded-full;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .chip-pendiente {
+    @apply bg-blue-100 text-[#004A99] text-xs font-bold px-2.5 py-1 rounded-full;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .chip-neutral {
+    @apply bg-[#e1e3e4] text-[#424751] text-xs font-bold px-2.5 py-1 rounded;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+
+  /* ─── Data mono ─── */
+  .data-value {
+    font-family: 'Space Grotesk', sans-serif;
+    @apply text-sm font-medium text-[#191c1d];
+  }
+  .data-label {
+    font-family: 'Public Sans', sans-serif;
+    @apply text-xs text-[#737783] uppercase tracking-wide font-semibold;
+  }
+
+  /* ─── Tabla ─── */
+  .table-header {
+    @apply px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-[#004A99];
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .table-cell {
+    @apply px-6 py-4 text-sm text-[#191c1d];
+    font-family: 'Public Sans', sans-serif;
+  }
+}
+
+/* ─── Animación scan IA ─── */
+.scan-line {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #004A99, transparent);
+  position: absolute;
+  width: 100%;
+  top: 0;
+  left: 0;
+  animation: scan 2.5s linear infinite;
+}
+@keyframes scan {
+  0% { top: 0%; }
+  100% { top: 100%; }
+}
