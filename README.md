@@ -131,17 +131,17 @@ Debes ver todos los servicios en estado `Up (healthy)`:
 
 | Servicio | Puerto |
 |---|---|
-| nutriplanta-gateway | 0.0.0.0:8085 |
-| nutriplanta-auth | 127.0.0.1:8001 |
-| nutriplanta-diagnostico | 127.0.0.1:8002 |
-| nutriplanta-postgres | 0.0.0.0:2332 |
-| nutriplanta-minio | 0.0.0.0:9000-9001 |
+| nutriplanta-gateway 
+| nutriplanta-auth 
+| nutriplanta-diagnostico 
+| nutriplanta-postgres 
+| nutriplanta-minio 
 
 ### 6. Verificar endpoints de salud
 
 ```bash
-curl http://localhost:8085/api/v1/auth/health
-curl http://localhost:8085/api/v1/diagnostico/health
+curl http://localhost:puerto/api/v1/auth/health
+curl http://localhost:puerto/api/v1/diagnostico/health
 ```
 
 ### 7. Levantar el frontend
